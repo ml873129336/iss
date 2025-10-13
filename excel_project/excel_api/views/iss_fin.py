@@ -195,7 +195,7 @@ class Iss_Fin_solve_excel(APIView):
                     'excel_api',
                     'templates',
                     'excel_api',
-                    '模版.xlsx'  # 注意 Linux 文件名大小写敏感
+                    'template.xlsx'  # 注意 Linux 文件名大小写敏感
                 )
             )
 
