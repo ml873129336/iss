@@ -186,7 +186,7 @@ class Iss_Fin_solve_excel(APIView):
 
         if platform.system() == 'Windows':
             # Windows 系统
-            template_path = r'/excel_project/excel_api/templates/excel_api/template.xlsx'
+            template_path = r'D:\project\excelapp\excel_project\excel_api\templates\excel_api\template.xlsx'
         else:
             # Linux / macOS
             template_path = os.path.normpath(
@@ -246,9 +246,16 @@ class Iss_Fin_solve_excel(APIView):
                     if df_col in df.columns:
                         ws.cell(row=row_idx, column=col_idx, value=row_data[df_col])
 
-        print(wb)
+
+
+        # 遍历前10行内容（可根据需要调整）
+        for cell in ws['A']:  # B列
+            print(cell.value)
 
         output_path = os.path.join(settings.MEDIA_ROOT, "output.xlsx")
+
+
+
         wb.save(output_path)
 
 
