@@ -254,6 +254,7 @@ class Iss_Fin_solve_excel(APIView):
 
         output_path = os.path.join(settings.MEDIA_ROOT, "output.xlsx")
         try:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
             wb.save(output_path)
             print("保存成功",output_path)
         except Exception as e:
