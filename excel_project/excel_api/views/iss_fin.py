@@ -200,6 +200,8 @@ class Iss_Fin_solve_excel(APIView):
             )
 
 
+
+
         # template_path = os.path.normpath(os.path.join(settings.BASE_DIR, 'excel_api', 'templates', 'excel_api',  '模版.xlsx'))
         # template_path = r'D:\project\excelapp\excel_project\excel_api\templates\excel_api\模板.xlsx'
         df["zhence"] = ''
@@ -209,6 +211,8 @@ class Iss_Fin_solve_excel(APIView):
         wb = load_workbook(template_path)
 
         ws = wb.active  # 如果有多个 sheet，可以 ws = wb["Sheet1"]
+
+        print(ws)
         template_columns = [ws.cell(row=3, column=col).value for col in range(1, ws.max_column + 1)]
         start_row = 4
         col_map = {
