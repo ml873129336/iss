@@ -214,6 +214,9 @@ class Iss_Fin_solve_excel(APIView):
 
         print(ws)
         template_columns = [ws.cell(row=3, column=col).value for col in range(1, ws.max_column + 1)]
+
+        print(template_columns)
+
         start_row = 4
         col_map = {
             "开票单号*": "Invoice No.",
