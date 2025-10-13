@@ -186,7 +186,7 @@ class Iss_Fin_solve_excel(APIView):
 
         if platform.system() == 'Windows':
             # Windows 系统
-            template_path = r'D:\project\excelapp\excel_project\excel_api\templates\excel_api\模板.xlsx'
+            template_path = r'/excel_project/excel_api/templates/excel_api/template.xlsx'
         else:
             # Linux / macOS
             template_path = os.path.normpath(
@@ -203,7 +203,7 @@ class Iss_Fin_solve_excel(APIView):
 
 
         # template_path = os.path.normpath(os.path.join(settings.BASE_DIR, 'excel_api', 'templates', 'excel_api',  '模版.xlsx'))
-        # template_path = r'D:\project\excelapp\excel_project\excel_api\templates\excel_api\模板.xlsx'
+        # template_path = r'D:\project\excelapp\excel_project\excel_api\templates\excel_api\template.xlsx'
         df["zhence"] = ''
         df["biaoshi"] = ''
         df.loc[df['Invoice type'] == '02', 'zhence'] = '免税'

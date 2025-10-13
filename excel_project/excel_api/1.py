@@ -134,7 +134,7 @@ class ExcelApp:
         df["biaoshi"] = ''
         df.loc[df['Invoice type'] == '02', 'zhence'] = '免税'
         df.loc[df['Invoice type'] == '02', 'biaoshi'] = 1
-        template_path = "templates/excel_api/模板.xlsx"
+        template_path = "templates/excel_api/template.xlsx"
         wb = load_workbook(template_path)
         ws = wb.active  # 如果有多个 sheet，可以 ws = wb["Sheet1"]
         template_columns = [ws.cell(row=3, column=col).value for col in range(1, ws.max_column + 1)]
