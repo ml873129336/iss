@@ -253,10 +253,14 @@ class Iss_Fin_solve_excel(APIView):
             print(cell.value)
 
         output_path = os.path.join(settings.MEDIA_ROOT, "output.xlsx")
+        try:
+            wb.save(output_path)
+            print("保存成功",output_path)
+        except Exception as e:
+            print("保存失败:", e)
 
 
 
-        wb.save(output_path)
 
 
 
