@@ -198,6 +198,8 @@ class Iss_Fin_solve_excel(APIView):
                     '模版.xlsx'  # 注意 Linux 文件名大小写敏感
                 )
             )
+
+
         # template_path = os.path.normpath(os.path.join(settings.BASE_DIR, 'excel_api', 'templates', 'excel_api',  '模版.xlsx'))
         # template_path = r'D:\project\excelapp\excel_project\excel_api\templates\excel_api\模板.xlsx'
         df["zhence"] = ''
@@ -205,6 +207,7 @@ class Iss_Fin_solve_excel(APIView):
         df.loc[df['Invoice type'] == '02', 'zhence'] = '免税'
         df.loc[df['Invoice type'] == '02', 'biaoshi'] = 1
         wb = load_workbook(template_path)
+
         ws = wb.active  # 如果有多个 sheet，可以 ws = wb["Sheet1"]
         template_columns = [ws.cell(row=3, column=col).value for col in range(1, ws.max_column + 1)]
         start_row = 4
@@ -223,6 +226,7 @@ class Iss_Fin_solve_excel(APIView):
             "优惠政策名称": "zhence"
 
         }
+
 
         for row_idx, row_data in enumerate(df.to_dict(orient="records"), start=start_row):
             for col_idx, template_col in enumerate(template_columns, start=1):
