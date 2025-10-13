@@ -212,10 +212,8 @@ class Iss_Fin_solve_excel(APIView):
 
         ws = wb.active  # 如果有多个 sheet，可以 ws = wb["Sheet1"]
 
-        print(ws)
         template_columns = [ws.cell(row=3, column=col).value for col in range(1, ws.max_column + 1)]
 
-        print(template_columns)
 
         start_row = 4
         col_map = {
@@ -247,6 +245,8 @@ class Iss_Fin_solve_excel(APIView):
                     df_col = col_map[template_col]  # 找到对应的 df 列名
                     if df_col in df.columns:
                         ws.cell(row=row_idx, column=col_idx, value=row_data[df_col])
+
+        print(wb)
 
         output_path = os.path.join(settings.MEDIA_ROOT, "output.xlsx")
         wb.save(output_path)
