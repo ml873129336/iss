@@ -1,5 +1,6 @@
 from django.shortcuts import render
 # Create your views here.
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
@@ -7,6 +8,10 @@ import pandas as pd
 import re
 import traceback
 import os
+from utils import mail_utils
+
+from django.conf import settings
+
 
 class ExcelUploadView(APIView):
     parser_classes = [MultiPartParser]
@@ -144,7 +149,36 @@ class ExcelUploadView(APIView):
             department_df.to_excel(file_path, index=False, engine='openpyxl')
             print(f'已生成: {file_path}')
 
-        print(f'\n所有部门数据已导出到目录: {output_dir}')
+        dir = os.path.join(settings.BASE_DIR,output_dir)
+        print(f'\n所有部门数据已导出到目录: {dir}')
+        self.send_file_to_department(dir)
+
+    def send_file_to_department(self,dir):
+        print(os.listdir(dir))
+        dept_emails = {
+            "财务": "peter.mo@iss-gf.com",
+            "采购": "peter.mo@iss-gf.com",
+            "IT": "peter.mo@iss-gf.com",
+            "海运": "peter.mo@iss-gf.com",
+            "空运": "peter.mo@iss-gf.com",
+            "商务": "peter.mo@iss-gf.com",
+            "项目": "peter.mo@iss-gf.com",
+            "宁波": "peter.mo@iss-gf.com",
+            "深圳": "peter.mo@iss-gf.com"
+        }
+
+        for f in os.listdir(dir):
+            for dept, email in dept_emails.items():
+                if f.startswith(dept):
+                    path = os.path.join(dir, f)
+                    print(path)
+                    if os.path.isfile(path):
+                        print("yes")
+                        mail_utils.send_email(email, path)
+                    break
+
+
+
 
     def sum_date(self,row,unit):
         sum = []

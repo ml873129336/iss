@@ -1,4 +1,8 @@
 import imaplib
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 import email
 import re
 from datetime import datetime
@@ -9,6 +13,8 @@ from asserts_manager.serializers import EmployeeSerializer
 import os
 
 IMAP_SERVER = "imap.163.com"
+SMTP_SERVER = "smtp.163.com"
+SMTP_PORT = 465
 EMAIL_ACCOUNT = "issemail@163.com"
 PASSWORD = "CFeZ4mrMp8j4QZfC"
 FOLDER = "收件箱"
@@ -115,7 +121,7 @@ def record_new_employee_data(text):
                     created.append(serializer.errors)
     return created
 
-
+# 连接收件服务器
 def connet_email():
     # 连接邮箱
     imaplib.Commands['ID'] = ('AUTH')
@@ -167,5 +173,21 @@ def check_email(keyword):
 
     return body_list
 
-def get_attachement():
-    mail = connet_email()
+def send_email(to,attachment):
+
+    msg = MIMEMultipart()
+    msg["Subject"] = "部门异常考勤统计"
+    msg["From"] = EMAIL_ACCOUNT
+    msg["To"] = to
+
+    body = MIMEText("Hi\n\n附件是部门本月异常考勤，请查收，谢谢\n", "plain", "utf-8")
+    msg.attach(body)
+
+    with open(attachment,"rb") as f:
+        part = MIMEApplication(f.read(),Name = os.path.basename(attachment))
+    part["Content-Disposition"] = f'attachment; filename="{os.path.basename(attachment)}"'
+    msg.attach(part)
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+        server.login(EMAIL_ACCOUNT, PASSWORD)
+        server.send_message(msg)
+    print("✅ 邮件已发送")
