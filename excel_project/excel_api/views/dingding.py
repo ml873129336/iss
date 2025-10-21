@@ -8,6 +8,7 @@ import pandas as pd
 import re
 import traceback
 import os
+import shutil
 from utils import mail_utils
 
 from django.conf import settings
@@ -41,6 +42,7 @@ class ExcelUploadView(APIView):
             return Response({"error": "未上传文件"}, status=400)
 
         try:
+            print(file.name)
 
             # result =1
             if file.name.startswith("请假"):
@@ -50,7 +52,8 @@ class ExcelUploadView(APIView):
                 df_result = self.solve_leave(df_clean)
                 title="请假记录"
 
-            elif "考勤" in file.name:
+            elif file.name.startswith("艾斯捷国际运输(上海)有限公司"):
+                print(1)
                 df = pd.read_excel(file,skiprows=2,usecols=['姓名', '部门','日期','上班1打卡时间','上班1打卡结果','下班1打卡时间','下班1打卡结果'],sheet_name="每日统计")
                 df = df.drop(index=0).reset_index(drop=True)
                 df_clean = df.fillna("")
@@ -71,7 +74,7 @@ class ExcelUploadView(APIView):
             return Response({"error": str(e)}, status=500)
 
     def solve_attendence(self,df):
-        status = ['正常', '外勤','','管理员莫良-Peter Mo改为正常','请假']
+        status = ['正常', '外勤','','管理员莫良-Peter Mo改为正常','请假','外出']
         filter_user = ["杨剑书-Edward Yang","周诗炯-George Zhou","方晨曦-Fang Sean","张明秋","储青利-Liz Chu","罗健-Ken Luo"]
         df_filter = df[
             (~df['上班1打卡结果'].isin(status)) |
@@ -108,29 +111,24 @@ class ExcelUploadView(APIView):
         df_result = df_final.to_dict(orient="records")
         return df_result
 
-    def split_department_tosheet(self,df):
-        departments = df['部门'].unique()
-
-        # 指定Excel文件路径
-        excel_file_path = '按部门考勤统计.xlsx'
-
-        # 创建一个ExcelWriter对象，用于写入多个sheet
-        with pd.ExcelWriter(excel_file_path, engine='openpyxl') as writer:
-            # 遍历每个部门
-            for department in departments:
-                # 筛选出当前部门的数据
-                department_df = df[df['部门'] == department]
-
-                # 将部门数据写入到一个sheet中，sheet名称为部门名称
-                # 注意：Excel sheet名称有长度限制（31个字符）和不能包含特殊字符，所以这里取部门名的前31个字符
-                sheet_name = department[:31]
-                department_df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-        print(f'Excel文件已生成：{excel_file_path}')
 
     def split_dep_tofile(self, df):
         output_dir = '部门考勤数据'
-        os.makedirs(output_dir, exist_ok=True)
+        if os.path.exists(output_dir):
+            # 删除目录下的所有文件和子目录，但保留该目录本身
+            for item in os.listdir(output_dir):
+                item_path = os.path.join(output_dir, item)
+                try:
+                    if os.path.isfile(item_path) or os.path.islink(item_path):
+                        os.unlink(item_path)  # 删除文件或软链接
+                    elif os.path.isdir(item_path):
+                        shutil.rmtree(item_path)  # 删除子目录
+                except Exception as e:
+                    print(f"删除失败: {item_path}, 原因: {e}")
+        else:
+            os.makedirs(output_dir, exist_ok=True)
+            print(f"已创建目录: {output_dir}")
+
 
         # 获取所有唯一的部门列表
         departments = df['部门'].unique()
@@ -149,33 +147,16 @@ class ExcelUploadView(APIView):
             department_df.to_excel(file_path, index=False, engine='openpyxl')
             print(f'已生成: {file_path}')
 
-        dir = os.path.join(settings.BASE_DIR,output_dir)
+        dir = os.path.join(settings.BASE_DIR,'部门考勤数据')
         print(f'\n所有部门数据已导出到目录: {dir}')
-        self.send_file_to_department(dir)
+        # self.send_file_to_department(dir)
 
-    def send_file_to_department(self,dir):
-        print(os.listdir(dir))
-        dept_emails = {
-            "财务": "peter.mo@iss-gf.com",
-            "采购": "peter.mo@iss-gf.com",
-            "IT": "peter.mo@iss-gf.com",
-            "海运": "peter.mo@iss-gf.com",
-            "空运": "peter.mo@iss-gf.com",
-            "商务": "peter.mo@iss-gf.com",
-            "项目": "peter.mo@iss-gf.com",
-            "宁波": "peter.mo@iss-gf.com",
-            "深圳": "peter.mo@iss-gf.com"
-        }
+    def clear_files(self,folder_path):
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
 
-        for f in os.listdir(dir):
-            for dept, email in dept_emails.items():
-                if f.startswith(dept):
-                    path = os.path.join(dir, f)
-                    print(path)
-                    if os.path.isfile(path):
-                        print("yes")
-                        mail_utils.send_email(email, path)
-                    break
 
 
 
