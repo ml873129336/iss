@@ -22,6 +22,7 @@ class Iss_Fin_solve_excel(APIView):
         self.df1 = None
         self.df2 = None
         self.df3 = None
+        self.df4 = None
         files = request.FILES.getlist("files")
 
         try:
@@ -50,6 +51,7 @@ class Iss_Fin_solve_excel(APIView):
         self.df1 = None
         self.df2 = None
         self.df3 = None
+        self.df4 = None
         try:
             files = mail_utils.check_email("INV")
             print(files)
@@ -103,6 +105,9 @@ class Iss_Fin_solve_excel(APIView):
                 else:
                     self.df2 = pd.read_csv(file, usecols=["Invoice No.", "Created By"], encoding="utf-8-sig")
 
+            elif file.name.startswith("Contacts"):
+                self.df4 = pd.read_excel(io.BytesIO(content),usecols=["Foreign Name", "Tax ID"])
+                print(self.df4)
             else:
                 sheets_to_read = ['海运部', '深圳办', '宁波办', '空运部', '项目部','税率6%']
                 # sheets_to_read = ['空运部']
@@ -126,10 +131,12 @@ class Iss_Fin_solve_excel(APIView):
                 self.df3['INVPVGNo.\n不要有空格'] = self.df3['INVPVGNo.\n不要有空格'].str.replace(r'\s+', '', regex=True)
                 # self.check_both_loaded()
 
-
+    def update_row(self,row):
+        if row['Invoice type'] == "02" :
+            return "国际货物运输" + str(row['开票商品名称'])
+        return str(row['开票商品名称'])
 
     def solve_excel_data(self):
-        # print(self.df1)
         if self.df1 is None or self.df2 is None:
             return
 
@@ -141,11 +148,11 @@ class Iss_Fin_solve_excel(APIView):
             df[col] = pd.to_numeric(df[col], errors='coerce')
         df['sum1'] = df['Amount'] * df['Exchange rate']
         df['sum'] = df.groupby(['Invoice number'])['sum1'].transform('sum')
+        df['sum_yuan']=df.groupby(['Invoice number'])['Amount'].transform('sum')
 
-        last_col_data = df.iloc[:, -1]
-
+        last_col_data = df.iloc[:, -2]
         df.loc[:, 'Unit price'] = last_col_data
-        df.loc[:, 'Amount'] = last_col_data
+        # df.loc[:, 'Amount'] = last_col_data
         df = df.rename(columns={"Invoice number": "Invoice No."})
         df.drop(columns=['sum1'], inplace=True)
 
@@ -154,9 +161,8 @@ class Iss_Fin_solve_excel(APIView):
         inv_to_email = pd.Series(self.df2["email"].values, index=self.df2["Invoice No."]).to_dict()
         df["Email address"] = df["Invoice No."].map(inv_to_email)
         df = df.drop_duplicates(subset=['Invoice No.'])
-        # print(self.df3)
 
-        # print(self.df3)
+
         if self.df3 is not None and not self.df3.empty:
 
             df = df[df['Invoice No.'].isin(self.df3['INVPVGNo.\n不要有空格'])]
@@ -167,16 +173,27 @@ class Iss_Fin_solve_excel(APIView):
                 how='left',
             )
 
-            df_merged['Commodity name'] = df_merged['Commodity name'].where(
-                df_merged['Commodity name'] != '',
-                "国际货物运输" + df_merged['开票商品名称']
-            )
+            print(df_merged.columns)
+            # print(df_merged['Tax rate'])
+
+
+
+            df_merged['Commodity name'] = df_merged.apply(self.update_row, axis=1)
+
+
             df_merged['备注'] = df_merged['备注'].fillna('').astype(str)
             df_merged['Issuing note'] = df_merged['Issuing note'] + "\n" + df_merged['备注']
 
             df = df_merged.drop(columns=['开票商品名称', '备注'])
+            print(df)
+            if self.df4 is not None and not self.df4.empty:
+                self.df4 = self.df4.drop_duplicates(subset=['Foreign Name'], keep='first')
+                df = df.merge(self.df4, left_on='Buyer name',right_on="Foreign Name", how='left')
+                print(df)
+                df['Buyer tax number'] = df['Buyer tax number'].mask(df['Buyer tax number'] == '', df['Tax ID'])
+                df = df.drop(columns=['Tax ID'])
+
             self.filter_df = df
-            print(self.filter_df)
 
             self.complete_template_data(self.filter_df)
         return self.download_file("output.xlsx")
@@ -222,13 +239,14 @@ class Iss_Fin_solve_excel(APIView):
             "购方税号": "Buyer tax number",
             "商品名称*": "Commodity name",
             "单价": "Unit price",
-            "金额": "Amount",
+            "金额": "sum",
             "发票备注": "Issuing note",
             "邮箱地址": "Email address",
             "税率": "Tax rate",
             "发票种类*": "Invoice type",
             "零税率标识": "biaoshi",
-            "优惠政策名称": "zhence"
+            "优惠政策名称": "zhence",
+            "原金额": "Amount"
 
         }
 
@@ -241,16 +259,23 @@ class Iss_Fin_solve_excel(APIView):
                     ws.cell(row=row_idx, column=col_idx, value="1.00")
                 if template_col == "清单标志":
                     ws.cell(row=row_idx, column=col_idx, value="0")
+
                 if template_col in col_map:  # 如果模板列名在映射里
                     df_col = col_map[template_col]  # 找到对应的 df 列名
+
                     if df_col in df.columns:
-                        ws.cell(row=row_idx, column=col_idx, value=row_data[df_col])
+                        value = row_data[df_col]
+                        if template_col == "原金额":  # 模板列名为“原金额”
+                            if "Exchange rate" in df.columns and "Amount" in df.columns:
+                                if row_data["Exchange rate"] == 1:
+                                    value = ""  # 汇率为1时置空
+                                else:
+                                    value = row_data["sum_yuan"]  # 否则填amount的值
+
+                        ws.cell(row=row_idx, column=col_idx, value=value)
 
 
 
-        # 遍历前10行内容（可根据需要调整）
-        for cell in ws['A']:  # B列
-            print(cell.value)
 
         output_path = os.path.join(settings.MEDIA_ROOT, "output.xlsx")
         try:
@@ -259,10 +284,6 @@ class Iss_Fin_solve_excel(APIView):
             print("保存成功",output_path)
         except Exception as e:
             print("保存失败:", e)
-
-
-
-
 
 
 
