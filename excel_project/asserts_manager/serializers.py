@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Employee
+from .models import Asset,Department,Employee
 from datetime import date
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -21,3 +21,24 @@ class EmployeeSerializer(serializers.ModelSerializer):
     #     if value < date.today():
     #         raise serializers.ValidationError("入职日期不能早于今天。")
     #     return value
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ['id', 'name']
+
+
+
+class AssetSerializer(serializers.ModelSerializer):
+    department = DepartmentSerializer(read_only=True)
+    user = EmployeeSerializer(read_only=True)
+
+    department_id = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), source='department', write_only=True)
+    user_id = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), source='user', write_only=True)
+
+    class Meta:
+        model = Asset
+        fields = ['id', 'name', 'serial_number', 'status', 'remark', 'purchase_date',
+                  'department', 
+                  'user'
+                  'category']
