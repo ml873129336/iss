@@ -38,6 +38,8 @@ class SendEmailView(APIView):
             "深圳": "peter.mo@iss-gf.com"
         }
 
+
+
         for f in os.listdir(self.dictionary):
             for dept, email in dept_emails.items():
                 if f.startswith(dept):
@@ -45,5 +47,5 @@ class SendEmailView(APIView):
                     print(path)
                     if os.path.isfile(path):
                         print("yes")
-                        mail_utils.send_email(email, path)
+                        mail_utils.send_email(email, "部门异常考勤统计","Hi\n\n附件是部门本月异常考勤，请查收，谢谢\n","plain",path)
                     break

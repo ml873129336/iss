@@ -17,16 +17,18 @@ class EmailParseView(APIView):
 
     def get(self,request):
 
-        body_list = mail_utils.check_email("Onboarding")
+        body_list = mail_utils.check_email("Onboard")
 
         created=""
         for body in body_list:
 
             created = mail_utils.record_new_employee_data(body['body'])
 
+
         return Response({'created': created}, status=201)
 
 """解析直接从邮箱获取的邮件"""
+
 
 # class GetEmailParse(APIView):
 #     def get(self,request):

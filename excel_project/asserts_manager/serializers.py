@@ -1,11 +1,10 @@
 from rest_framework import serializers
 from .models import Asset,Department,Employee
+
 from datetime import date
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Employee
-        fields = '__all__'
+
 
     def validate_name(self, value):
         if not value.strip():
@@ -15,6 +14,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(value+" 该名字已存在")
 
         return value
+
+    class Meta:
+        model = Employee
+        fields = '__all__'
 
     # 字段校验：onboard_date_before 不应早于今天
     # def validate_onboard_date(self, value):
@@ -29,16 +32,33 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 
-class AssetSerializer(serializers.ModelSerializer):
-    department = DepartmentSerializer(read_only=True)
-    user = EmployeeSerializer(read_only=True)
 
-    department_id = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), source='department', write_only=True)
-    user_id = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), source='user', write_only=True)
+
+class AssetSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    description_display = serializers.CharField(source='get_description_display', read_only=True)
+    file_url = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
+    user = EmployeeSerializer(read_only=True)  # 嵌套显示
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(),
+        source='user',
+        write_only=True
+    )
+
+
 
     class Meta:
         model = Asset
-        fields = ['id', 'name', 'serial_number', 'status', 'remark', 'purchase_date',
-                  'department', 
-                  'user'
-                  'category']
+        fields = '__all__'
+
+    def get_file_url(self, obj):
+        request = self.context.get('request')
+        if obj.file and hasattr(obj.file, 'url'):
+            return request.build_absolute_uri(obj.file.url)
+        return None
+
+    def get_file_name(self, obj):
+        if obj.file:
+            return obj.file.name.split('/')[-1]  # 🔹 取真实文件名
+        return None

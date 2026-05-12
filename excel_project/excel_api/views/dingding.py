@@ -74,8 +74,9 @@ class ExcelUploadView(APIView):
             return Response({"error": str(e)}, status=500)
 
     def solve_attendence(self,df):
-        status = ['正常', '外勤','','管理员莫良-Peter Mo改为正常','请假','外出']
-        filter_user = ["杨剑书-Edward Yang","周诗炯-George Zhou","方晨曦-Fang Sean","张明秋","储青利-Liz Chu","罗健-Ken Luo"]
+        status = ['正常', '外勤','','管理员莫良-Peter Mo改为正常','请假','外出',"未打卡"]
+        filter_user = ["杨剑书-Edward Yang","周诗炯-George Zhou","方晨曦-Fang Sean","张明秋","储青利-Liz Chu","罗健-Ken Luo","莫良-Peter Mo"]
+        filter_date = [""]
         df_filter = df[
             (~df['上班1打卡结果'].isin(status)) |
             (~df['下班1打卡结果'].isin(status))  &
@@ -107,7 +108,7 @@ class ExcelUploadView(APIView):
         df_merged.drop(columns=['总结_x', '总结_y'], inplace=True)
         # print(df_merged)
         df_final = pd.merge(df_clean[columns], df_merged, on="创建人", how="left")
-        df_final = df_final.sort_values(by=['创建人部门', '创建人'])
+        df_final = df_final.sort_values(by=['创建人部门', '创建人']).fillna("")
         df_result = df_final.to_dict(orient="records")
         return df_result
 
