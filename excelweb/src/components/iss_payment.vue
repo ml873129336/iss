@@ -113,7 +113,7 @@ const preview = async () => {
   try {
     loading.value = true;
 
-    const res = await previewDianxin(dianxinAmount.value);
+    const res = await previewDianxin(dianxinAmount.value,"dianxin");
     previewImg.value = res.data.preview;
 
   } catch (e) {

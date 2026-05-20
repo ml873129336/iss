@@ -125,6 +125,14 @@ class Iss_Fin1_solve_excel(APIView):
             right_on="Invoice No.",
             how="left"
         )
+        #找到有没写备注的invocie no
+        invalid_invoice = df1.loc[
+            df1["Remarks_x"].astype(str).str.strip() == "",
+            "Invoice No."
+        ].unique()
+
+        # 剔除这些 Invoice No.
+        df1 = df1[~df1["Invoice No."].isin(invalid_invoice)]
 
         group_cols = ["Invoice No.", "Remarks_x"]
         df1["Amount"] = df1["Amount"].apply(lambda x: Decimal(str(x)))

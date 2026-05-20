@@ -96,7 +96,7 @@ def check_email(keyword):
     body_list = []
     try:
         mail = connet_email()
-        status, messages = mail.search(None, "ALL")
+        status, messages = mail.search(None, "UNSEEN")
 
 
         if status == "OK":

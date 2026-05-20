@@ -18,7 +18,7 @@ export function downloadColipu(amount) {
   });
 }
 
-
+const company="dianxin"
 // =========================
 // 电信 - 下载 Excel
 // =========================

@@ -47,6 +47,14 @@
     >
       开始上传2
     </el-button>
+    <el-button 
+      class="mt-4" 
+      type="success" 
+      @click="submitUpload2"
+      
+    >
+      开始上传3
+    </el-button>
   </div>
 </template>
 
@@ -184,6 +192,62 @@ const submitUpload1 = async () => {
   }
 }
 
+const submitUpload2 = async () => {
+  if (fileList.value.length === 0) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
+
+  uploading.value = true
+  progressPercent.value = 0
+  uploadStatus.value = ''
+
+  const formData = new FormData()
+  fileList.value.forEach(file => {
+    formData.append('files', file.raw)
+  })
+
+  try {
+    // 192.168.18.22
+    //127.0.0.1
+    const response = await axios.post('http://127.0.0.1:8000/api/iss_fin2/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      responseType: 'blob',
+      onUploadProgress: progressEvent => {
+        progressPercent.value = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        )
+      }
+      
+    })
+
+  
+
+    uploadStatus.value = 'success'
+    ElNotification({
+      title: '成功',
+      message: '文件上传成功',
+      type: 'success'
+    })
+    fileList.value = []
+    downloadFile(response.data, response.headers, "处理结果.xlsx")
+
+  } catch (error) {
+    uploadStatus.value = 'exception'
+    ElNotification({
+      title: '错误',
+      message: '文件上传失败',
+      type: 'error'
+    })
+    console.error('上传错误:', error)
+  } finally {
+    uploading.value = false
+  }
+}
+
+
 const fetchAttachments = async () => {
   try {
     const response = await axios.get('http://192.168.18.22:8000/api/iss_fin/')
@@ -196,6 +260,7 @@ const fetchAttachments = async () => {
     console.error(error)
   }
 }
+
 
 
 const downloadFile = (data, headers, defaultFilename = "下载文件.xlsx") => {
